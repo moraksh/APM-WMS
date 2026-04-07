@@ -86,7 +86,7 @@ export function RecordBrowser({
   return (
     <main className="page-shell">
       <section className="section-card module-toolbar-card">
-        <div className="module-toolbar-head">
+        <div className="module-toolbar-head module-toolbar-stack">
           <div className="module-inline-title">{title}</div>
           <div className="action-toolbar action-toolbar-tight">
             <button className="primary-button" type="button" onClick={() => openAction("create")}>

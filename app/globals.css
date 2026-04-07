@@ -98,6 +98,13 @@ textarea {
   font-weight: 700;
 }
 
+.topbar .menu-toggle-button {
+  border-color: rgba(111, 141, 189, 0.22);
+  background: linear-gradient(135deg, #7f9bc8, #6f8dbd);
+  color: #ffffff;
+  box-shadow: var(--shadow);
+}
+
 .sidebar-brand {
   display: flex;
   align-items: center;
@@ -534,10 +541,20 @@ textarea {
   flex-wrap: wrap;
 }
 
+.module-toolbar-stack {
+  display: grid;
+  gap: 14px;
+  align-items: flex-start;
+}
+
 .form-actions,
 .status-row,
 .action-toolbar {
   margin-top: 14px;
+}
+
+.action-toolbar-tight {
+  margin-top: 0;
 }
 
 .form-actions-span {
@@ -574,9 +591,15 @@ textarea {
 }
 
 .module-inline-title {
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-weight: 700;
+  justify-content: flex-start;
+  width: fit-content;
+  min-height: auto;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: clamp(1.4rem, 2.4vw, 1.8rem);
+  font-weight: 800;
 }
 
 .action-link.active,
@@ -810,8 +833,7 @@ textarea {
 
   .menu-toggle-button,
   .primary-button,
-  .secondary-button,
-  .module-inline-title {
+  .secondary-button {
     width: 100%;
   }
 
@@ -837,8 +859,8 @@ textarea {
     display: none;
   }
 
-  .module-heading-card h1 {
-    font-size: 1.55rem;
+  .module-inline-title {
+    font-size: 1.5rem;
   }
 
   .section-card,
