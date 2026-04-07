@@ -1,4 +1,5 @@
 import type { Item } from "@/lib/mock-data";
+import type { Database } from "@/lib/supabase/types";
 import { items as fallbackItems } from "@/lib/mock-data";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -29,8 +30,7 @@ export async function getItems(query?: string): Promise<{ items: Item[]; source:
     };
   }
 
-  const { data, error } = await supabase
-    .from("items")
+  const { data, error } = await (supabase.from("items") as any)
     .select("item_code, description, category, unit, reorder_level, status")
     .order("item_code", { ascending: true });
 
@@ -42,7 +42,13 @@ export async function getItems(query?: string): Promise<{ items: Item[]; source:
     };
   }
 
-  const mapped = data.map((item) => ({
+  type ItemRow = Pick<
+    Database["public"]["Tables"]["items"]["Row"],
+    "item_code" | "description" | "category" | "unit" | "reorder_level" | "status"
+  >;
+
+  const typedData = data as ItemRow[];
+  const mapped: Item[] = typedData.map((item) => ({
     itemCode: item.item_code,
     description: item.description,
     category: item.category,
@@ -71,14 +77,16 @@ export async function createItem(input: {
     return { ok: false, message: "Supabase environment variables are missing." };
   }
 
-  const { error } = await supabase.from("items").insert({
+  const payload: Database["public"]["Tables"]["items"]["Insert"] = {
     item_code: input.itemCode,
     description: input.description,
     category: input.category,
     unit: input.unit,
     reorder_level: input.reorderLevel,
     status: input.status,
-  });
+  };
+
+  const { error } = await (supabase.from("items") as any).insert(payload);
 
   if (error) {
     return { ok: false, message: error.message };
@@ -104,16 +112,17 @@ export async function updateItem(
     return { ok: false, message: "Supabase environment variables are missing." };
   }
 
-  const { error } = await supabase
-    .from("items")
-    .update({
-      item_code: input.itemCode,
-      description: input.description,
-      category: input.category,
-      unit: input.unit,
-      reorder_level: input.reorderLevel,
-      status: input.status,
-    })
+  const payload: Database["public"]["Tables"]["items"]["Update"] = {
+    item_code: input.itemCode,
+    description: input.description,
+    category: input.category,
+    unit: input.unit,
+    reorder_level: input.reorderLevel,
+    status: input.status,
+  };
+
+  const { error } = await (supabase.from("items") as any)
+    .update(payload)
     .eq("item_code", originalItemCode);
 
   if (error) {
@@ -130,7 +139,7 @@ export async function deleteItem(itemCode: string): Promise<{ ok: true } | { ok:
     return { ok: false, message: "Supabase environment variables are missing." };
   }
 
-  const { error } = await supabase.from("items").delete().eq("item_code", itemCode);
+  const { error } = await (supabase.from("items") as any).delete().eq("item_code", itemCode);
 
   if (error) {
     return { ok: false, message: error.message };
