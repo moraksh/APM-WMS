@@ -1,7 +1,11 @@
-export function Topbar() {
+export function Topbar({ onMenuToggle }: { onMenuToggle: () => void }) {
   return (
     <header className="topbar topbar-compact">
       <div className="topbar-actions topbar-actions-wide">
+        <button className="menu-toggle-button" type="button" onClick={onMenuToggle} aria-label="Open menu">
+          Menu
+        </button>
+
         <div className="topbar-search">
           <input
             type="search"
