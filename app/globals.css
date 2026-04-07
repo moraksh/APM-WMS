@@ -809,3 +809,34 @@ textarea {
     padding: 18px;
   }
 }
+
+@media (max-width: 640px) {
+  .topbar-actions-wide {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .menu-toggle-button {
+    width: auto;
+    justify-self: start;
+  }
+
+  .profile-chip {
+    width: auto;
+    justify-self: end;
+    justify-content: flex-start;
+  }
+
+  .topbar-search {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+    order: 3;
+  }
+
+  .topbar-icon-button {
+    display: none;
+  }
+}
