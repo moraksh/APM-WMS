@@ -1,19 +1,19 @@
 import { RecordBrowser } from "@/components/record-browser";
+import { getProcessFieldSettings } from "@/lib/field-settings-service";
 import { salesOrders } from "@/lib/mock-data";
 
-export default function SalesOrdersPage() {
+export default async function SalesOrdersPage() {
+  const fieldSettings = await getProcessFieldSettings("sales_orders");
+  const visibleKeys = ["orderNo", "customer", "orderDate", "items", "shipFrom", "status"];
+
   return (
     <RecordBrowser
       title="Sales Orders"
       basePath="/sales-orders"
-      columns={[
-        { key: "orderNo", label: "Order No" },
-        { key: "customer", label: "Customer" },
-        { key: "orderDate", label: "Order Date" },
-        { key: "items", label: "Items" },
-        { key: "shipFrom", label: "Ship From" },
-        { key: "status", label: "Status" },
-      ]}
+      columns={visibleKeys.map((key) => ({
+        key,
+        label: fieldSettings.find((field) => field.key === key)?.label ?? key,
+      }))}
       rows={salesOrders.map((order) => ({
         id: order.orderNo,
         values: {

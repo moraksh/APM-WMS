@@ -48,3 +48,4 @@ export const quickActions = [
 export const recentActivities = [
   { title: "Goods receipt posted", detail: "GRN-2026-043 moved 150 units into receiving.", time: "18 min ago" }
 ];
+

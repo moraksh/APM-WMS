@@ -1,4 +1,5 @@
-import { itemMasterFields, itemMasterUniqueKeys } from "@/lib/item-master-fields";
+import { getProcessFieldSettings } from "@/lib/field-settings-service";
+import { itemMasterUniqueKeys } from "@/lib/item-master-fields";
 import { getItemIdentityKey } from "@/lib/item-master-utils";
 import { createItemAction, deleteItemAction, getSelectedItems, updateItemAction } from "../actions";
 
@@ -13,6 +14,7 @@ export default async function ItemActionPage({ searchParams }: { searchParams?: 
   const nextIds = selectedItems.slice(1).map((item) => getItemIdentityKey(item)).join(",");
   const title = mode.charAt(0).toUpperCase() + mode.slice(1);
   const createLike = mode === "create" || mode === "copy";
+  const fieldSettings = await getProcessFieldSettings("items");
 
   return (
     <main className="page-shell action-screen-shell">
@@ -29,10 +31,10 @@ export default async function ItemActionPage({ searchParams }: { searchParams?: 
             <div className="modal-backdrop-static">
               <div className="confirm-dialog">
                 <h3>Delete item?</h3>
-                <p>Warehouse: {currentItem.warehouse}</p>
-                <p>Company: {currentItem.company}</p>
-                <p>Item Number: {currentItem.item_number}</p>
-                <p>Item Description 1: {currentItem.item_description_1}</p>
+                <p>{fieldSettings.find((field) => field.key === "warehouse")?.label ?? "Warehouse"}: {currentItem.warehouse}</p>
+                <p>{fieldSettings.find((field) => field.key === "company")?.label ?? "Company"}: {currentItem.company}</p>
+                <p>{fieldSettings.find((field) => field.key === "item_number")?.label ?? "Item Number"}: {currentItem.item_number}</p>
+                <p>{fieldSettings.find((field) => field.key === "item_description_1")?.label ?? "Item Description 1"}: {currentItem.item_description_1}</p>
                 <form action={deleteItemAction} className="form-actions">
                   <input type="hidden" name="identity" value={getItemIdentityKey(currentItem)} />
                   <input type="hidden" name="nextIds" value={nextIds} />
@@ -48,9 +50,13 @@ export default async function ItemActionPage({ searchParams }: { searchParams?: 
           <form className="form-grid" action={createLike ? createItemAction : updateItemAction}>
             <input type="hidden" name="nextIds" value={nextIds} />
             {!createLike && currentItem ? <input type="hidden" name="originalIdentity" value={getItemIdentityKey(currentItem)} /> : null}
-            {itemMasterFields.map((field) => {
+            {fieldSettings.map((field) => {
               const readOnly = mode === "change" && itemMasterUniqueKeys.includes(field.key as (typeof itemMasterUniqueKeys)[number]);
               const defaultValue = mode === "copy" && field.key === "item_number" ? "" : currentItem?.[field.key] ?? "";
+
+              if (!field.visible) {
+                return <input key={field.key} type="hidden" name={field.key} value={defaultValue} readOnly />;
+              }
 
               return (
                 <label key={field.key}>
@@ -69,3 +75,4 @@ export default async function ItemActionPage({ searchParams }: { searchParams?: 
     </main>
   );
 }
+

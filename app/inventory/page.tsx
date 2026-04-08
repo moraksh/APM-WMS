@@ -1,19 +1,19 @@
 import { RecordBrowser } from "@/components/record-browser";
+import { getProcessFieldSettings } from "@/lib/field-settings-service";
 import { inventory } from "@/lib/mock-data";
 
-export default function InventoryPage() {
+export default async function InventoryPage() {
+  const fieldSettings = await getProcessFieldSettings("inventory");
+  const visibleKeys = ["itemCode", "description", "location", "onHand", "allocated", "available"];
+
   return (
     <RecordBrowser
       title="Inventory"
       basePath="/inventory"
-      columns={[
-        { key: "itemCode", label: "Item Code" },
-        { key: "description", label: "Description" },
-        { key: "location", label: "Location" },
-        { key: "onHand", label: "On Hand" },
-        { key: "allocated", label: "Allocated" },
-        { key: "available", label: "Available" },
-      ]}
+      columns={visibleKeys.map((key) => ({
+        key,
+        label: fieldSettings.find((field) => field.key === key)?.label ?? key,
+      }))}
       rows={inventory.map((row) => ({
         id: `${row.itemCode}-${row.location}`,
         values: {

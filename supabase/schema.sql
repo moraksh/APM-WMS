@@ -365,6 +365,21 @@ create table public.sales_orders (
   updated_by_user text not null default 'Akshay'
 );
 
+create table public.process_field_settings (
+  id uuid primary key default gen_random_uuid(),
+  process_name text not null,
+  field_key text not null,
+  display_label text not null,
+  is_visible boolean not null default true,
+  is_required boolean not null default false,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default timezone('utc', now()),
+  created_by_user text not null default 'Akshay',
+  updated_at timestamptz not null default timezone('utc', now()),
+  updated_by_user text not null default 'Akshay',
+  unique (process_name, field_key)
+);
+
 create or replace function public.apply_audit_fields() returns trigger language plpgsql as $$
 begin
   if tg_op = 'INSERT' then
@@ -388,7 +403,7 @@ declare
   text_lengths integer[] := array[20,30,40,50,60,70,80,90,100,120,140,160,180,220,255];
   idx integer;
 begin
-  foreach table_name in array array['items', 'locations', 'goods_receipts', 'inventory', 'sales_orders'] loop
+  foreach table_name in array array['items', 'locations', 'goods_receipts', 'inventory', 'sales_orders', 'process_field_settings'] loop
     for idx in 1..15 loop
       execute format('alter table public.%I add column if not exists reserve_text_%s varchar(%s)', table_name, lpad(idx::text, 2, '0'), text_lengths[idx]);
       execute format('alter table public.%I add column if not exists reserve_num_%s numeric(18,4)', table_name, lpad(idx::text, 2, '0'));
@@ -402,6 +417,7 @@ alter table public.locations enable row level security;
 alter table public.goods_receipts enable row level security;
 alter table public.inventory enable row level security;
 alter table public.sales_orders enable row level security;
+alter table public.process_field_settings enable row level security;
 
 drop policy if exists "public read items" on public.items;
 create policy "public read items" on public.items for select to anon using (true);
@@ -426,3 +442,8 @@ insert into public.locations (warehouse, company, code, zone, aisle, bin, capaci
 
 
 
+
+drop policy if exists "public read process field settings" on public.process_field_settings;
+create policy "public read process field settings" on public.process_field_settings for select to anon using (true);
+drop policy if exists "public write process field settings" on public.process_field_settings;
+create policy "public write process field settings" on public.process_field_settings for all to anon using (true) with check (true);

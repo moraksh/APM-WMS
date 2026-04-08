@@ -1,19 +1,19 @@
 import { RecordBrowser } from "@/components/record-browser";
+import { getProcessFieldSettings } from "@/lib/field-settings-service";
 import { locations } from "@/lib/mock-data";
 
-export default function LocationsPage() {
+export default async function LocationsPage() {
+  const fieldSettings = await getProcessFieldSettings("locations");
+  const visibleKeys = ["code", "zone", "aisle", "bin", "capacity", "status"];
+
   return (
     <RecordBrowser
       title="Location Master"
       basePath="/locations"
-      columns={[
-        { key: "code", label: "Code" },
-        { key: "zone", label: "Zone" },
-        { key: "aisle", label: "Aisle" },
-        { key: "bin", label: "Bin" },
-        { key: "capacity", label: "Capacity" },
-        { key: "status", label: "Status" },
-      ]}
+      columns={visibleKeys.map((key) => ({
+        key,
+        label: fieldSettings.find((field) => field.key === key)?.label ?? key,
+      }))}
       rows={locations.map((location) => ({
         id: location.code,
         values: {

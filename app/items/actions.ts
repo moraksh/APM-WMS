@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { itemMasterFields } from "@/lib/item-master-fields";
+import { getProcessFieldSettings } from "@/lib/field-settings-service";
 import { getItemIdentityKey } from "@/lib/item-master-utils";
 import { createItem, deleteItem, getItems, updateItem } from "@/lib/warehouse-service";
 
@@ -23,16 +23,17 @@ function parseIdentityKey(identityKey: string) {
   return { warehouse: warehouse ?? "", company: company ?? "", item_number: item_number ?? "" };
 }
 
-function readItemPayload(formData: FormData) {
+async function readItemPayload(formData: FormData) {
+  const settings = await getProcessFieldSettings("items");
   const payload: Record<string, string> = {};
-  for (const field of itemMasterFields) {
+  for (const field of settings) {
     payload[field.key] = String(formData.get(field.key) ?? "").trim();
   }
-  return payload;
+  return { payload, settings };
 }
 
-function validateRequiredFields(payload: Record<string, string>) {
-  return itemMasterFields.every((field) => !field.required || Boolean(payload[field.key]));
+function validateRequiredFields(payload: Record<string, string>, settings: Awaited<ReturnType<typeof getProcessFieldSettings>>) {
+  return settings.every((field) => !field.required || Boolean(payload[field.key]));
 }
 
 export async function createItemAction(formData: FormData) {
@@ -41,9 +42,9 @@ export async function createItemAction(formData: FormData) {
     .map((value) => value.trim())
     .filter(Boolean);
 
-  const payload = readItemPayload(formData);
+  const { payload, settings } = await readItemPayload(formData);
 
-  if (!validateRequiredFields(payload)) {
+  if (!validateRequiredFields(payload, settings)) {
     backToItems("Please enter all mandatory Item Master details.", true);
   }
 
@@ -63,9 +64,9 @@ export async function updateItemAction(formData: FormData) {
     .filter(Boolean);
 
   const identity = parseIdentityKey(String(formData.get("originalIdentity") ?? ""));
-  const payload = readItemPayload(formData);
+  const { payload, settings } = await readItemPayload(formData);
 
-  if (!identity.warehouse || !identity.company || !identity.item_number || !validateRequiredFields(payload)) {
+  if (!identity.warehouse || !identity.company || !identity.item_number || !validateRequiredFields(payload, settings)) {
     backToItems("Please enter all mandatory Item Master details.", true);
   }
 
