@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { itemMasterFields } from "@/lib/item-master-fields";
+import { getItemIdentityKey } from "@/lib/item-master-utils";
 import { createItem, deleteItem, getItems, updateItem } from "@/lib/warehouse-service";
 
 function nextActionUrl(mode: string, ids: string[]) {
@@ -16,31 +18,36 @@ function backToItems(message: string, error = false) {
   redirect(`/items?actionMessage=${encodeURIComponent(message)}&actionState=${error ? "error" : "success"}`);
 }
 
+function parseIdentityKey(identityKey: string) {
+  const [warehouse, company, item_number] = identityKey.split("||");
+  return { warehouse: warehouse ?? "", company: company ?? "", item_number: item_number ?? "" };
+}
+
+function readItemPayload(formData: FormData) {
+  const payload: Record<string, string> = {};
+  for (const field of itemMasterFields) {
+    payload[field.key] = String(formData.get(field.key) ?? "").trim();
+  }
+  return payload;
+}
+
+function validateRequiredFields(payload: Record<string, string>) {
+  return itemMasterFields.every((field) => !field.required || Boolean(payload[field.key]));
+}
+
 export async function createItemAction(formData: FormData) {
   const nextIds = String(formData.get("nextIds") ?? "")
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
-  const itemCode = String(formData.get("itemCode") ?? "").trim();
-  const description = String(formData.get("description") ?? "").trim();
-  const category = String(formData.get("category") ?? "").trim();
-  const unit = String(formData.get("unit") ?? "").trim();
-  const reorderLevel = Number.parseInt(String(formData.get("reorderLevel") ?? "0"), 10);
-  const status = String(formData.get("status") ?? "Active").trim();
 
-  if (!itemCode || !description || !category || !unit || Number.isNaN(reorderLevel) || reorderLevel < 0) {
-    backToItems("Please enter valid item details.", true);
+  const payload = readItemPayload(formData);
+
+  if (!validateRequiredFields(payload)) {
+    backToItems("Please enter all mandatory Item Master details.", true);
   }
 
-  const result = await createItem({
-    itemCode,
-    description,
-    category,
-    unit,
-    reorderLevel,
-    status,
-  });
-
+  const result = await createItem(payload);
   if (!result.ok) {
     backToItems(result.message, true);
   }
@@ -54,26 +61,15 @@ export async function updateItemAction(formData: FormData) {
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
-  const originalItemCode = String(formData.get("originalItemCode") ?? "").trim();
-  const description = String(formData.get("description") ?? "").trim();
-  const category = String(formData.get("category") ?? "").trim();
-  const unit = String(formData.get("unit") ?? "").trim();
-  const reorderLevel = Number.parseInt(String(formData.get("reorderLevel") ?? "0"), 10);
-  const status = String(formData.get("status") ?? "Active").trim();
 
-  if (!originalItemCode || !description || !category || !unit || Number.isNaN(reorderLevel) || reorderLevel < 0) {
-    backToItems("Please enter valid item details.", true);
+  const identity = parseIdentityKey(String(formData.get("originalIdentity") ?? ""));
+  const payload = readItemPayload(formData);
+
+  if (!identity.warehouse || !identity.company || !identity.item_number || !validateRequiredFields(payload)) {
+    backToItems("Please enter all mandatory Item Master details.", true);
   }
 
-  const result = await updateItem(originalItemCode, {
-    itemCode: originalItemCode,
-    description,
-    category,
-    unit,
-    reorderLevel,
-    status,
-  });
-
+  const result = await updateItem(identity, payload);
   if (!result.ok) {
     backToItems(result.message, true);
   }
@@ -87,14 +83,14 @@ export async function deleteItemAction(formData: FormData) {
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
-  const itemCode = String(formData.get("itemCode") ?? "").trim();
 
-  if (!itemCode) {
+  const identity = parseIdentityKey(String(formData.get("identity") ?? ""));
+
+  if (!identity.warehouse || !identity.company || !identity.item_number) {
     backToItems("Please select an item to delete.", true);
   }
 
-  const result = await deleteItem(itemCode);
-
+  const result = await deleteItem(identity);
   if (!result.ok) {
     backToItems(result.message, true);
   }
@@ -106,6 +102,6 @@ export async function deleteItemAction(formData: FormData) {
 export async function getSelectedItems(ids: string[]) {
   const { items } = await getItems();
   return ids
-    .map((id) => items.find((item) => item.itemCode === id))
+    .map((id) => items.find((item) => getItemIdentityKey(item) === id))
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
 }
